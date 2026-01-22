@@ -1,0 +1,8 @@
+﻿,特征说明
+X1,video_count (视频发布数量)
+X2,total_likes (视频总点赞数)
+X3,total_comments (视频总评论数)
+X4,total_shares (视频总转发数)
+X5,total_collects (视频总收藏数)
+X6,comment_count (评论发布数量)
+X7,avg_comment_likes (评论平均点赞数)

@@ -1,0 +1,2 @@
+﻿dataset_type,noise_type,var_count,lag,sample_size
+B1C,Gaussian,6,4,3000
