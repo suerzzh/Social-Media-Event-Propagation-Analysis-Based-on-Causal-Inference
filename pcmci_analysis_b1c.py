@@ -447,6 +447,12 @@ def main():
         print(f"⚠️  文件不存在: {data_path}")
         print("   尝试查找其他可用文件...")
         
+        #alt_paths = [
+         #   Path("data/TimeGraph/B1C/Gaussian error/4 variable/Lag 2/nonlinear_confounded_n1000_vars4_lag2_gaussian.csv"),
+          #  Path("data/TimeGraph/B1C/Gaussian error/6 variable/lag 3/nonlinear_confounded_n3000_vars6_lag3_gaussian.csv"),
+           # Path("data/TimeGraph/B1C/Gaussian error/6 variable/Lag 2/nonlinear_confounded_n1000_vars6_lag2_gaussian.csv"),
+        #]
+        
         alt_paths = [
             Path("data/TimeGraph/B1C/Gaussian error/4 variable/Lag 2/nonlinear_confounded_n1000_vars4_lag2_gaussian.csv"),
             Path("data/TimeGraph/B1C/Gaussian error/6 variable/lag 3/nonlinear_confounded_n3000_vars6_lag3_gaussian.csv"),
