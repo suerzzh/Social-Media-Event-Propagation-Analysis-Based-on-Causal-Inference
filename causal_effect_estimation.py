@@ -131,6 +131,15 @@ class CausalEffectEstimator:
         print(f"   时间点数: {len(self.df_features)}")
         print(f"   特征维度: {self.df_features.shape[1]}")
         print(f"   特征列表: {list(self.df_features.columns)}")
+
+        # 🔧 新增:重命名列
+        column_mapping = {
+            'video_count': 'X1', 'total_likes': 'X2', 'total_comments': 'X3',
+            'total_shares': 'X4', 'total_collects': 'X5', 'comment_count': 'X6',
+            'avg_comment_likes': 'X7'
+        }
+        self.df_features = self.df_features.rename(columns=column_mapping)
+        print(f"✅ 列名已统一为: {list(self.df_features.columns)}")
         
         # 加载关键因果路径
         self.df_pathways = pd.read_csv(self.pathways_path)
@@ -139,6 +148,8 @@ class CausalEffectEstimator:
         
         # 筛选出需要估计的路径 (排除Lag 0,因为无法确定因果方向)
         self.target_pathways = self.df_pathways[self.df_pathways['Lag'] > 0].copy()
+        # 保留所有关系(包括Lag 0)
+        #self.target_pathways = self.df_pathways.copy()
         print(f"\n📊 可估计路径: {len(self.target_pathways)} 个 (排除了同时效应)")
         
         return self.df_features, self.target_pathways
@@ -158,72 +169,89 @@ class CausalEffectEstimator:
         返回:
             效应大小、置信区间、统计显著性
         """
-        # 构造滞后特征
-        X_cause = self.df_features[cause].shift(lag).dropna().values.reshape(-1, 1)
-        y_effect = self.df_features[effect].iloc[lag:].values
-        
-        # 对齐长度
-        min_len = min(len(X_cause), len(y_effect))
-        X_cause = X_cause[:min_len]
-        y_effect = y_effect[:min_len]
-        
-        # 添加控制变量
-        if control_vars:
-            X_controls = []
-            for var in control_vars:
-                control_data = self.df_features[var].shift(lag).dropna().values[:min_len]
-                X_controls.append(control_data)
-            X = np.column_stack([X_cause] + X_controls)
-        else:
-            X = X_cause
-        
-        # 线性回归
-        model = LinearRegression()
-        model.fit(X, y_effect)
-        
-        # 效应大小 (第一个系数)
-        effect_size = model.coef_[0]
-        
-        # 预测和残差
-        y_pred = model.predict(X)
-        residuals = y_effect - y_pred
-        
-        # R²
-        r2 = model.score(X, y_effect)
-        
-        # 标准误和置信区间
-        n = len(y_effect)
-        p = X.shape[1]
-        
-        # 残差标准差
-        residual_std = np.sqrt(np.sum(residuals**2) / (n - p - 1))
-        
-        # 系数标准误
-        X_var = np.sum((X[:, 0] - X[:, 0].mean())**2)
-        se = residual_std / np.sqrt(X_var)
-        
-        # 95% 置信区间
-        t_critical = stats.t.ppf(0.975, n - p - 1)
-        ci_lower = effect_size - t_critical * se
-        ci_upper = effect_size + t_critical * se
-        
-        # t统计量和p值
-        t_stat = effect_size / se
-        p_value = 2 * (1 - stats.t.cdf(abs(t_stat), n - p - 1))
-        
-        return {
-            'cause': cause,
-            'effect': effect,
-            'lag': lag,
-            'effect_size': effect_size,
-            'std_error': se,
-            'ci_lower': ci_lower,
-            'ci_upper': ci_upper,
-            't_statistic': t_stat,
-            'p_value': p_value,
-            'r_squared': r2,
-            'n_observations': n
-        }
+        # 🔧 添加:调试信息和数据检查
+        try:
+            # 检查变量是否存在
+            if cause not in self.df_features.columns:
+                raise KeyError(f"变量 {cause} 不存在于特征数据中")
+            if effect not in self.df_features.columns:
+                raise KeyError(f"变量 {effect} 不存在于特征数据中")
+
+            # 构造滞后特征
+            X_cause = self.df_features[cause].shift(lag).dropna().values.reshape(-1, 1)
+            y_effect = self.df_features[effect].iloc[lag:].values
+
+            # 🔧 添加:检查数据长度
+            if len(X_cause) < 10:
+                raise ValueError(f"数据点太少: {len(X_cause)} < 10")
+            
+            # 对齐长度
+            min_len = min(len(X_cause), len(y_effect))
+            X_cause = X_cause[:min_len]
+            y_effect = y_effect[:min_len]
+            
+            # 添加控制变量
+            if control_vars:
+                X_controls = []
+                for var in control_vars:
+                    control_data = self.df_features[var].shift(lag).dropna().values[:min_len]
+                    X_controls.append(control_data)
+                X = np.column_stack([X_cause] + X_controls)
+            else:
+                X = X_cause
+            
+            # 线性回归
+            model = LinearRegression()
+            model.fit(X, y_effect)
+            
+            # 效应大小 (第一个系数)
+            effect_size = model.coef_[0]
+            
+            # 预测和残差
+            y_pred = model.predict(X)
+            residuals = y_effect - y_pred
+            
+            # R²
+            r2 = model.score(X, y_effect)
+            
+            # 标准误和置信区间
+            n = len(y_effect)
+            p = X.shape[1]
+            
+            # 残差标准差
+            residual_std = np.sqrt(np.sum(residuals**2) / (n - p - 1))
+            
+            # 系数标准误
+            X_var = np.sum((X[:, 0] - X[:, 0].mean())**2)
+            se = residual_std / np.sqrt(X_var)
+            
+            # 95% 置信区间
+            t_critical = stats.t.ppf(0.975, n - p - 1)
+            ci_lower = effect_size - t_critical * se
+            ci_upper = effect_size + t_critical * se
+            
+            # t统计量和p值
+            t_stat = effect_size / se
+            p_value = 2 * (1 - stats.t.cdf(abs(t_stat), n - p - 1))
+            
+            return {
+                'cause': cause,
+                'effect': effect,
+                'lag': lag,
+                'effect_size': effect_size,
+                'std_error': se,
+                'ci_lower': ci_lower,
+                'ci_upper': ci_upper,
+                't_statistic': t_stat,
+                'p_value': p_value,
+                'r_squared': r2,
+                'n_observations': n
+            }
+
+        except Exception as e:
+            # 🔧 添加:详细错误信息
+            print(f"   ⚠️ {cause}→{effect} (Lag{lag}) 估计失败: {e}")
+            return None  # 返回None而不是崩溃
     
     def estimate_all_effects(self):
         """
@@ -244,6 +272,9 @@ class CausalEffectEstimator:
             
             try:
                 result = self.estimate_linear_effect(cause, effect, lag)
+                # 🔧 添加:检查结果是否为None
+                if result is None:
+                    continue  # 跳过失败的估计
                 results.append(result)
                 
                 # 显著性标记
@@ -656,7 +687,7 @@ def main():
     try:
         # ========== 配置参数 ==========
         features_file = "douyin_optimized/n100000/original_features_12H_optimized.csv"
-        pathways_file = "causal_graph_analysis/key_pathways.csv"
+        pathways_file = "run_data/n1000/pcmci_significant_links.csv"
         
         print(f"\n📂 使用文件:")
         print(f"   特征数据: {features_file}")
