@@ -612,7 +612,10 @@ class CausalEffectEstimator:
 **主要关系**:
 """
             
-            for _, row in lag_data.nlargest(3, 'effect_size', key=abs).iterrows():
+            #for _, row in lag_data.nlargest(3, 'effect_size', key=abs).iterrows():
+            # 改为(分两步)
+            top3_indices = lag_data['effect_size'].abs().nlargest(3).index
+            for _, row in lag_data.loc[top3_indices].iterrows():
                 report += f"- {row['cause']} → {row['effect']}: {row['effect_size']:.4f}\n"
             
             report += "\n"
