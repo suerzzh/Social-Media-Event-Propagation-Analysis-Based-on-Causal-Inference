@@ -7,6 +7,15 @@
         <mxCell id="ny2JIQUikN04O6pdjazs-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;" value="&lt;font style=&quot;font-size: 15px;&quot;&gt;步骤一：输入时序数据&lt;/font&gt;&lt;div&gt;1.规则多变的时间序列&lt;/div&gt;&lt;div&gt;2.包含X1—X7等核心变量&lt;/div&gt;&lt;div&gt;3.每个观测点对应统一时间窗&lt;/div&gt;" vertex="1">
           <mxGeometry height="90" width="180" x="80" y="190" as="geometry" />
         </mxCell>
+        <mxCell id="ny2JIQUikN04O6pdjazs-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;" value="&lt;font style=&quot;font-size: 15px;&quot;&gt;步骤一：输入时序数据&lt;/font&gt;&lt;div&gt;1.规则多变的时间序列&lt;/div&gt;&lt;div&gt;2.包含X1—X7等核心变量&lt;/div&gt;&lt;div&gt;3.每个观测点对应统一时间窗&lt;/div&gt;" vertex="1">
+          <mxGeometry height="90" width="180" x="360" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="ny2JIQUikN04O6pdjazs-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;" value="&lt;font style=&quot;font-size: 15px;&quot;&gt;步骤一：输入时序数据&lt;/font&gt;&lt;div&gt;1.规则多变的时间序列&lt;/div&gt;&lt;div&gt;2.包含X1—X7等核心变量&lt;/div&gt;&lt;div&gt;3.每个观测点对应统一时间窗&lt;/div&gt;" vertex="1">
+          <mxGeometry height="90" width="180" x="360" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="ny2JIQUikN04O6pdjazs-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;" value="&lt;font style=&quot;font-size: 15px;&quot;&gt;步骤一：输入时序数据&lt;/font&gt;&lt;div&gt;1.规则多变的时间序列&lt;/div&gt;&lt;div&gt;2.包含X1—X7等核心变量&lt;/div&gt;&lt;div&gt;3.每个观测点对应统一时间窗&lt;/div&gt;" vertex="1">
+          <mxGeometry height="90" width="180" x="80" y="380" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
