@@ -1,9 +1,27 @@
 <mxfile host="app.diagrams.net">
   <diagram name="第 1 页" id="4sZcBwSqYBeMsm8n3KkK">
-    <mxGraphModel dx="1122" dy="617" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="930" dy="511" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="0EqYyl5Twokt_m04KWXX-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=none;" value="&lt;font style=&quot;font-size: 15px;&quot;&gt;从不规则事件流到规则多变时间序列的构造路径&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="320" x="230" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="0EqYyl5Twokt_m04KWXX-5" edge="1" parent="1" source="0EqYyl5Twokt_m04KWXX-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;shape=flexArrow;" target="0EqYyl5Twokt_m04KWXX-4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0EqYyl5Twokt_m04KWXX-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;" value="&lt;font style=&quot;font-size: 15px;&quot;&gt;步骤一： 原始事件流&lt;/font&gt;&lt;div&gt;1.发帖、点赞、评论、分享、收藏等行为以离散事件形式出现&lt;/div&gt;&lt;div&gt;2.事件到达时间不均匀，单位时间内事件密度波动明显&lt;/div&gt;&lt;div&gt;3.原始序列难以直接用于规则时序分析&lt;/div&gt;" vertex="1">
+          <mxGeometry height="90" width="345" x="225" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="0EqYyl5Twokt_m04KWXX-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;" value="&lt;font style=&quot;font-size: 15px;&quot;&gt;步骤二：固定时间窗划分&lt;/font&gt;&lt;div&gt;1.将观测期按12H切分为W1、W2、W3、....、Wm&lt;/div&gt;&lt;div&gt;2.每个时间窗长度固定，保证不同时间段可比&lt;/div&gt;&lt;div&gt;3.以窗口为单位重新组织原始事件流&lt;/div&gt;" vertex="1">
+          <mxGeometry height="85" width="345" x="225" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="0EqYyl5Twokt_m04KWXX-6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="输入数据" vertex="1">
+          <mxGeometry height="20" width="60" x="490" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="0EqYyl5Twokt_m04KWXX-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="统一规则" vertex="1">
+          <mxGeometry height="20" width="55" x="492.5" y="610" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
