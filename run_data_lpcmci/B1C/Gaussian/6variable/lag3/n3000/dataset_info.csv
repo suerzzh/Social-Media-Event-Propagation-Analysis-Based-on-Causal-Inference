@@ -1,0 +1,2 @@
+﻿dataset_type,noise_type,var_count,lag,sample_size,method,requested_test,actual_test,alpha,pc_alpha,max_p_global,max_q_global,include_u,variables_used,input_file,elapsed_seconds
+B1C,Gaussian,6,3,3000,LPCMCI,cmiknn,cmiknn,0.05,0.2,3,3,False,"X1,X2,X3,X4,X5,X6",C:\Users\86187\Desktop\毕设\新版\B1C\lag 3\3000\nonlinear_confounded_n3000_vars6_lag3_gaussian.csv,1074.935936

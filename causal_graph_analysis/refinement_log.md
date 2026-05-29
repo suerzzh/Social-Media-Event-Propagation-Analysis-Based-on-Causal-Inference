@@ -1,9 +1,9 @@
 # 因果图精炼与可视化运行日志
 
 ## 运行信息
-- **开始时间**: 2026-01-24 12:52:25
-- **结束时间**: 2026-01-24 12:52:28
-- **总耗时**: 0:00:02.554177
+- **开始时间**: 2026-03-16 17:07:14
+- **结束时间**: 2026-03-16 17:07:17
+- **总耗时**: 0:00:02.929222
 
 ---
 
@@ -15,7 +15,7 @@
 ================================================================================
 
 📂 初始化:
-   输入文件: run_data/n1000/pcmci_significant_links.csv
+   输入文件: run_data\douyin\pcmci_results.csv
    输出目录: causal_graph_analysis
 
 ================================================================================
@@ -23,17 +23,8 @@
 ================================================================================
 
 ✅ PCMCI结果已加载:
-   总关系数: 78
+   总关系数: 196
    显著关系数: 78
-
-✅ 特征映射已加载:
-   X1: video_count (视频发布数量)
-   X2: total_likes (视频总点赞数)
-   X3: total_comments (视频总评论数)
-   X4: total_shares (视频总转发数)
-   X5: total_collects (视频总收藏数)
-   X6: comment_count (评论发布数量)
-   X7: avg_comment_likes (评论平均点赞数)
 
 📊 过滤后:
    保留 78 个显著因果关系
@@ -86,64 +77,44 @@
 🔥 Top 10 最强因果关系:
 
 1. X3 <--> X2
-   total_comments (视频总评论数)
-   total_likes (视频总点赞数)
    相关性: 0.990 | p值: 0.000000
-   传播解释: total_comments  → 同时 → total_likes 
+   传播时间: 同时
 
 2. X2 <--> X3
-   total_likes (视频总点赞数)
-   total_comments (视频总评论数)
    相关性: 0.990 | p值: 0.000000
-   传播解释: total_likes  → 同时 → total_comments 
+   传播时间: 同时
 
 3. X5 <--> X4
-   total_collects (视频总收藏数)
-   total_shares (视频总转发数)
    相关性: 0.954 | p值: 0.000000
-   传播解释: total_collects  → 同时 → total_shares 
+   传播时间: 同时
 
 4. X4 <--> X5
-   total_shares (视频总转发数)
-   total_collects (视频总收藏数)
    相关性: 0.954 | p值: 0.000000
-   传播解释: total_shares  → 同时 → total_collects 
+   传播时间: 同时
 
 5. X4 <--> X2
-   total_shares (视频总转发数)
-   total_likes (视频总点赞数)
    相关性: 0.886 | p值: 0.000000
-   传播解释: total_shares  → 同时 → total_likes 
+   传播时间: 同时
 
 6. X2 <--> X4
-   total_likes (视频总点赞数)
-   total_shares (视频总转发数)
    相关性: 0.886 | p值: 0.000000
-   传播解释: total_likes  → 同时 → total_shares 
+   传播时间: 同时
 
 7. X4 <--> X3
-   total_shares (视频总转发数)
-   total_comments (视频总评论数)
    相关性: 0.872 | p值: 0.000000
-   传播解释: total_shares  → 同时 → total_comments 
+   传播时间: 同时
 
 8. X3 <--> X4
-   total_comments (视频总评论数)
-   total_shares (视频总转发数)
    相关性: 0.872 | p值: 0.000000
-   传播解释: total_comments  → 同时 → total_shares 
+   传播时间: 同时
 
 9. X5 <--> X3
-   total_collects (视频总收藏数)
-   total_comments (视频总评论数)
    相关性: 0.774 | p值: 0.000000
-   传播解释: total_collects  → 同时 → total_comments 
+   传播时间: 同时
 
 10. X3 <--> X5
-   total_comments (视频总评论数)
-   total_collects (视频总收藏数)
    相关性: 0.774 | p值: 0.000000
-   传播解释: total_comments  → 同时 → total_collects 
+   传播时间: 同时
 
 ✅ 关键路径已保存: causal_graph_analysis\key_pathways.csv
 
@@ -157,13 +128,13 @@
    平均度: 12.29
 
 🎯 节点重要性排名 (度中心性):
-   X4 (total_shares ): 2.167
-   X5 (total_collects ): 2.167
-   X6 (comment_count ): 2.167
-   X2 (total_likes ): 2.000
-   X1 (video_count ): 2.000
-   X7 (avg_comment_likes ): 2.000
-   X3 (total_comments ): 1.833
+   X4: 2.167
+   X5: 2.167
+   X6: 2.167
+   X2: 2.000
+   X1: 2.000
+   X7: 2.000
+   X3: 1.833
 
 ================================================================================
 步骤6: 生成可视化图表

@@ -1,0 +1,2 @@
+﻿dataset_type,noise_type,var_count,lag,sample_size,method,alpha,permutations,components,ridge_alpha,gamma,cv_splits,max_rows,include_u,variables_used,input_file,elapsed_seconds
+B1C,Gaussian,6,3,1000,Kernel_Granger,0.05,30,120,1.0,auto,3,1500,False,"X1,X2,X3,X4,X5,X6",C:\Users\86187\Desktop\毕设\新版\B1C\lag 3\1000\nonlinear_confounded_n1000_vars6_lag3_gaussian.csv,34.968891

@@ -14,6 +14,8 @@
 日期: 2026-01-21
 """
 
+import argparse
+import re
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -42,7 +44,11 @@ class Logger:
         self.start_time = datetime.now()
         
     def write(self, message):
-        self.terminal.write(message)
+        try:
+            self.terminal.write(message)
+        except UnicodeEncodeError:
+            safe_message = message.encode(getattr(self.terminal, 'encoding', 'utf-8') or 'utf-8', errors='replace').decode(getattr(self.terminal, 'encoding', 'utf-8') or 'utf-8', errors='replace')
+            self.terminal.write(safe_message)
         self.log_content.append(message)
     
     def flush(self):
@@ -51,10 +57,10 @@ class Logger:
     def save_to_markdown(self):
         if self.log_path is None:
             return
-        
+
         end_time = datetime.now()
         duration = end_time - self.start_time
-        
+
         md_content = f"""# 因果效应估计运行日志
 
 ## 运行信息
@@ -77,11 +83,197 @@ class Logger:
 - 包含所有效应估计结果和统计检验
 - 可用于论文方法和结果部分的撰写
 """
-        
+
         with open(self.log_path, 'w', encoding='utf-8') as f:
             f.write(md_content)
-        
-        print(f"\n✅ 运行日志已保存: {self.log_path}")
+
+        self.write(f"\n✅ 运行日志已保存: {self.log_path}\n")
+
+def normalize_feature_columns(df):
+    current_columns = list(df.columns)
+    has_standard_format = all(
+        str(col).startswith('X') and str(col)[1:].isdigit()
+        for col in current_columns if col not in ['time', 'U']
+    )
+
+    if not has_standard_format:
+        column_mapping = {
+            'video_count': 'X1', 'total_likes': 'X2', 'total_comments': 'X3',
+            'total_shares': 'X4', 'total_collects': 'X5', 'comment_count': 'X6',
+            'avg_comment_likes': 'X7'
+        }
+        df = df.rename(columns=column_mapping)
+
+    cols_to_drop = [col for col in ['time', 'U'] if col in df.columns]
+    if cols_to_drop:
+        df = df.drop(columns=cols_to_drop)
+
+    return df
+
+
+
+def normalize_pathways_columns(df):
+    rename_map = {}
+    if 'Significant' in df.columns and 'Causal' not in df.columns:
+        rename_map['Significant'] = 'Causal'
+    if rename_map:
+        df = df.rename(columns=rename_map)
+
+    required_columns = ['From', 'To', 'Lag']
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        raise ValueError(f"关键路径文件缺少必要列: {missing_columns}。当前列: {list(df.columns)}")
+
+    return df
+
+
+
+def parse_bool(value):
+    if pd.isna(value):
+        return False
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ['true', '1', 'yes']
+
+
+
+def load_dataset_info(run_dir):
+    dataset_info_path = Path(run_dir) / 'dataset_info.csv'
+    if not dataset_info_path.exists():
+        return None, None
+    df = pd.read_csv(dataset_info_path)
+    if df.empty:
+        return dataset_info_path, None
+    return dataset_info_path, df.iloc[0].to_dict()
+
+
+
+def discover_run_directories(base_dir=Path('run_data')):
+    if not base_dir.exists():
+        return []
+
+    candidates = []
+    for path_file in base_dir.glob('**/pcmci_significant_links.csv'):
+        run_dir = path_file.parent
+        try:
+            mtime = path_file.stat().st_mtime
+        except OSError:
+            mtime = 0
+        candidates.append((mtime, run_dir))
+
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    return [run_dir for _, run_dir in candidates]
+
+
+
+def extract_variables_from_dataset_info(dataset_info):
+    if not dataset_info:
+        return []
+    variables_used = dataset_info.get('variables_used')
+    if pd.isna(variables_used) or not variables_used:
+        return []
+    return [value.strip() for value in str(variables_used).split(',') if value.strip() and value.strip() != 'U']
+
+
+
+def score_feature_candidate(csv_path, dataset_info, expected_columns):
+    score = 0
+    path_lower = str(csv_path).lower()
+    file_name = csv_path.name.lower()
+
+    if file_name in {'pcmci_results.csv', 'pcmci_significant_links.csv', 'results_all.csv', 'results_significant.csv', 'dataset_info.csv', 'key_pathways.csv', 'effect_estimates.csv'}:
+        return -10**9
+
+    resolved_dataset_mode = str(dataset_info.get('resolved_dataset_mode', '')).lower() if dataset_info else ''
+    if resolved_dataset_mode and resolved_dataset_mode in path_lower:
+        score += 3
+    if dataset_info:
+        file_name_hint = str(dataset_info.get('file_name', '')).lower()
+        if file_name_hint and file_name_hint == file_name:
+            score += 6
+        if parse_bool(dataset_info.get('has_u_column')) and 'u' in expected_columns:
+            score += 3
+
+    x_columns = [col for col in expected_columns if re.fullmatch(r'X\d+', str(col))]
+    score += min(len(x_columns), 10)
+    if 'time' in expected_columns:
+        score += 1
+    return score
+
+
+
+def infer_features_path(run_dir, dataset_info=None):
+    run_dir = Path(run_dir)
+    project_root = Path('.')
+
+    if dataset_info:
+        data_path_value = dataset_info.get('data_path')
+        if pd.notna(data_path_value) and data_path_value:
+            data_path = Path(str(data_path_value))
+            if data_path.exists():
+                return data_path
+
+        file_name_value = dataset_info.get('file_name')
+        if pd.notna(file_name_value) and file_name_value:
+            for candidate in [project_root / str(file_name_value), run_dir / str(file_name_value)]:
+                if candidate.exists():
+                    return candidate
+
+    expected_columns = extract_variables_from_dataset_info(dataset_info)
+    csv_candidates = [path for path in project_root.rglob('*.csv') if path.is_file()]
+    scored_candidates = []
+    for candidate in csv_candidates:
+        try:
+            columns = list(pd.read_csv(candidate, nrows=0).columns)
+        except Exception:
+            continue
+
+        if expected_columns and not set(expected_columns).issubset(set(columns)):
+            continue
+
+        score = score_feature_candidate(candidate, dataset_info or {}, columns)
+        if score > -10**9:
+            scored_candidates.append((score, candidate))
+
+    scored_candidates.sort(key=lambda item: (item[0], item[1].stat().st_mtime), reverse=True)
+    return scored_candidates[0][1] if scored_candidates else None
+
+
+
+def resolve_input_paths(features=None, pathways=None, run_dir=None):
+    if features and pathways:
+        return Path(features), Path(pathways), Path(run_dir) if run_dir else None, None, None
+
+    candidate_run_dir = Path(run_dir) if run_dir else None
+    if candidate_run_dir is None:
+        discovered = discover_run_directories()
+        if len(discovered) == 1:
+            candidate_run_dir = discovered[0]
+        elif len(discovered) > 1:
+            print(f"[INFO] 未显式指定运行目录，自动选择最近的运行目录: {discovered[0]}")
+            candidate_run_dir = discovered[0]
+
+    if candidate_run_dir is None:
+        raise FileNotFoundError('未找到可用的运行目录，请使用 --features/--pathways 或 --run-dir 指定输入')
+
+    pathways_path = Path(pathways) if pathways else candidate_run_dir / 'pcmci_significant_links.csv'
+    dataset_info_path, dataset_info = load_dataset_info(candidate_run_dir)
+    features_path = Path(features) if features else infer_features_path(candidate_run_dir, dataset_info)
+    return features_path, pathways_path, candidate_run_dir, dataset_info_path, dataset_info
+
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='因果效应估计模块',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument('--features', type=str, default=None, help='显式指定原始特征 CSV')
+    parser.add_argument('--pathways', type=str, default=None, help='显式指定关键路径 CSV')
+    parser.add_argument('--run-dir', type=str, default=None, help='PCMCI 运行目录，默认读取其中的 pcmci_significant_links.csv 和 dataset_info.csv')
+    parser.add_argument('--output-dir', type=str, default='causal_effect_analysis', help='输出目录')
+    return parser.parse_args()
+
 
 # ==================== 效应估计器 ====================
 class CausalEffectEstimator:
@@ -126,26 +318,43 @@ class CausalEffectEstimator:
         print("=" * 80)
         
         # 加载时间序列特征
-        self.df_features = pd.read_csv(self.features_path, index_col=0, parse_dates=True)
+        # 尝试不同的索引列设置
+        try:
+            # 先尝试使用第一列作为索引
+            self.df_features = pd.read_csv(self.features_path, index_col=0)
+        except:
+            # 如果失败，不使用索引列
+            self.df_features = pd.read_csv(self.features_path)
+
         print(f"\n✅ 特征数据已加载:")
         print(f"   时间点数: {len(self.df_features)}")
         print(f"   特征维度: {self.df_features.shape[1]}")
-        print(f"   特征列表: {list(self.df_features.columns)}")
+        print(f"   原始列名: {list(self.df_features.columns)}")
 
-        # 🔧 新增:重命名列
-        column_mapping = {
-            'video_count': 'X1', 'total_likes': 'X2', 'total_comments': 'X3',
-            'total_shares': 'X4', 'total_collects': 'X5', 'comment_count': 'X6',
-            'avg_comment_likes': 'X7'
-        }
-        self.df_features = self.df_features.rename(columns=column_mapping)
-        print(f"✅ 列名已统一为: {list(self.df_features.columns)}")
-        
+        original_columns = list(self.df_features.columns)
+        self.df_features = normalize_feature_columns(self.df_features)
+        if list(self.df_features.columns) == original_columns:
+            print(f"✅ 检测到标准格式列名，无需重命名")
+        else:
+            print(f"✅ 特征列已归一化")
+
+        print(f"   最终列名: {list(self.df_features.columns)}")
+
         # 加载关键因果路径
         self.df_pathways = pd.read_csv(self.pathways_path)
+        self.df_pathways = normalize_pathways_columns(self.df_pathways)
         print(f"\n✅ 关键路径已加载:")
         print(f"   路径数量: {len(self.df_pathways)}")
-        
+
+        missing_variables = sorted(
+            set(self.df_pathways['From']).union(set(self.df_pathways['To'])) - set(self.df_features.columns)
+        )
+        if missing_variables:
+            raise ValueError(
+                f"关键路径中的变量在特征数据中不存在: {missing_variables}。"
+                f" 特征列: {list(self.df_features.columns)}"
+            )
+
         # 筛选出需要估计的路径 (排除Lag 0,因为无法确定因果方向)
         self.target_pathways = self.df_pathways[self.df_pathways['Lag'] > 0].copy()
         # 保留所有关系(包括Lag 0)
@@ -678,40 +887,51 @@ def main():
     """
     主处理流程
     """
+    args = parse_args()
+
     # 初始化日志
     global logger
-    output_dir = Path("causal_effect_analysis")
-    output_dir.mkdir(exist_ok=True)
-    
-    temp_log_path = Path("temp_effect_log.md")
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    temp_log_path = output_dir / "temp_effect_log.md"
     logger = Logger(temp_log_path)
     sys.stdout = logger
-    
+
     try:
-        # ========== 配置参数 ==========
-        features_file = "douyin_optimized/n100000/original_features_12H_optimized.csv"
-        pathways_file = "run_data/n1000/pcmci_significant_links.csv"
-        
+        features_file, pathways_file, resolved_run_dir, dataset_info_path, dataset_info = resolve_input_paths(
+            features=args.features,
+            pathways=args.pathways,
+            run_dir=args.run_dir,
+        )
+
         print(f"\n📂 使用文件:")
         print(f"   特征数据: {features_file}")
         print(f"   关键路径: {pathways_file}")
-        
+        if resolved_run_dir is not None:
+            print(f"   运行目录: {resolved_run_dir}")
+        if dataset_info_path is not None:
+            print(f"   数据信息: {dataset_info_path}")
+
+        if features_file is None:
+            raise FileNotFoundError('无法根据运行目录推断原始特征文件，请使用 --features 显式指定')
+
         # 检查文件
         if not Path(features_file).exists():
             print(f"\n❌ 文件不存在: {features_file}")
             sys.stdout = logger.terminal
             return
-        
+
         if not Path(pathways_file).exists():
             print(f"\n❌ 文件不存在: {pathways_file}")
             sys.stdout = logger.terminal
             return
-        
+
         # ========== 初始化估计器 ==========
         estimator = CausalEffectEstimator(
             features_path=features_file,
             key_pathways_path=pathways_file,
-            output_dir="causal_effect_analysis"
+            output_dir=output_dir
         )
         
         # 更新日志路径

@@ -1,6 +1,0 @@
-Traceback (most recent call last):
-  File "C:\Users\86187\Desktop\毕设\基于因果推断的社交媒体事件传播分析\pcmci_validation.py", line 27, in <module>
-    from tigramite.independence_tests.gpdc import GPDC
-  File "C:\Users\86187\anaconda3\envs\causal_event\lib\site-packages\tigramite\independence_tests\gpdc.py", line 10, in <module>
-    import dcor
-ModuleNotFoundError: No module named 'dcor'

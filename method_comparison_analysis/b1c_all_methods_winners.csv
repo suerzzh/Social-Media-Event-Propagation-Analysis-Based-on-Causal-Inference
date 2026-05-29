@@ -1,0 +1,7 @@
+﻿lag_setting,sample_size,best_F1,winner_by_F1
+2,500,0.3333,GPDC
+2,1000,0.0,"FGES, GPDC, Granger, KernelGranger, LPCMCI, PC, ParCorr"
+2,3000,0.0,"FGES, GPDC, Granger, KernelGranger, LPCMCI, PC, ParCorr"
+3,500,0.2857,GPDC
+3,1000,0.2,GPDC
+3,3000,0.0,"FGES, GPDC, Granger, KernelGranger, LPCMCI, PC, ParCorr"

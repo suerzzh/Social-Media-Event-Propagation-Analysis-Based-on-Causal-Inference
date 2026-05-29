@@ -10,6 +10,7 @@
 日期: 2026-01-21
 """
 
+import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -35,7 +36,11 @@ class Logger:
         self.start_time = datetime.now()
         
     def write(self, message):
-        self.terminal.write(message)
+        try:
+            self.terminal.write(message)
+        except UnicodeEncodeError:
+            safe_message = message.encode(getattr(self.terminal, 'encoding', 'utf-8') or 'utf-8', errors='replace').decode(getattr(self.terminal, 'encoding', 'utf-8') or 'utf-8', errors='replace')
+            self.terminal.write(safe_message)
         self.log_content.append(message)
     
     def flush(self):
@@ -44,10 +49,10 @@ class Logger:
     def save_to_markdown(self):
         if self.log_path is None:
             return
-        
+
         end_time = datetime.now()
         duration = end_time - self.start_time
-        
+
         md_content = f"""# 因果图精炼与可视化运行日志
 
 ## 运行信息
@@ -70,11 +75,83 @@ class Logger:
 - 包含完整的分析过程和可视化结果
 - 可用于论文方法部分的撰写参考
 """
-        
+
         with open(self.log_path, 'w', encoding='utf-8') as f:
             f.write(md_content)
-        
-        print(f"\n✅ 运行日志已保存: {self.log_path}")
+
+        self.write(f"\n✅ 运行日志已保存: {self.log_path}\n")
+
+def normalize_pcmci_results_columns(df):
+    """兼容新版 pcmci_optimized.py 输出列名。"""
+    rename_map = {}
+    if 'Significant' in df.columns and 'Causal' not in df.columns:
+        rename_map['Significant'] = 'Causal'
+    if rename_map:
+        df = df.rename(columns=rename_map)
+
+    required_columns = ['Causal', 'Correlation', 'From', 'To', 'Lag', 'P_value']
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        raise ValueError(f"PCMCI结果缺少必要列: {missing_columns}。当前列: {list(df.columns)}")
+
+    if df['Causal'].dtype != bool:
+        causal_series = df['Causal']
+        if causal_series.dtype == object:
+            df['Causal'] = causal_series.astype(str).str.strip().str.lower().isin(['true', '1', 'yes'])
+        else:
+            df['Causal'] = causal_series.astype(bool)
+
+    return df
+
+
+def discover_run_directories(base_dir=Path('run_data')):
+    if not base_dir.exists():
+        return []
+
+    candidates = []
+    for result_file in base_dir.glob('**/pcmci_results.csv'):
+        run_dir = result_file.parent
+        try:
+            mtime = result_file.stat().st_mtime
+        except OSError:
+            mtime = 0
+        candidates.append((mtime, run_dir))
+
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    return [run_dir for _, run_dir in candidates]
+
+
+
+def resolve_pcmci_results_path(pcmci_results=None, run_dir=None):
+    if pcmci_results:
+        return Path(pcmci_results)
+
+    if run_dir:
+        return Path(run_dir) / 'pcmci_results.csv'
+
+    candidate_dirs = discover_run_directories()
+    if len(candidate_dirs) == 1:
+        return candidate_dirs[0] / 'pcmci_results.csv'
+    if len(candidate_dirs) > 1:
+        print(f"[INFO] 未显式指定输入，自动选择最近的运行目录: {candidate_dirs[0]}")
+        return candidate_dirs[0] / 'pcmci_results.csv'
+    return None
+
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='因果图精炼与可视化模块',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument('--pcmci-results', type=str, default=None, help='显式指定 PCMCI 结果文件路径')
+    parser.add_argument('--run-dir', type=str, default=None, help='PCMCI 运行目录，默认读取其中的 pcmci_results.csv')
+    parser.add_argument('--output-dir', type=str, default='causal_graph_analysis', help='输出目录')
+    parser.add_argument('--correlation-threshold', type=float, default=0.3, help='强关系过滤阈值')
+    parser.add_argument('--top-n', type=int, default=10, help='关键路径保留数量')
+    parser.add_argument('--core-top-n', type=int, default=15, help='核心传播路径图展示数量')
+    return parser.parse_args()
+
 
 # ==================== 因果图精炼器 ====================
 class CausalGraphRefiner:
@@ -88,20 +165,18 @@ class CausalGraphRefiner:
     4. 生成多种可视化图表
     """
     
-    def __init__(self, pcmci_results_path, feature_mapping_path, output_dir='causal_graph_analysis'):
+    def __init__(self, pcmci_results_path, output_dir='causal_graph_analysis'):
         """
         初始化
-        
+
         参数:
             pcmci_results_path: PCMCI结果CSV文件路径
-            feature_mapping_path: 特征映射CSV文件路径
             output_dir: 输出目录
         """
         self.results_path = pcmci_results_path
-        self.mapping_path = feature_mapping_path
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         print("=" * 80)
         print("因果图精炼与可视化模块")
         print("=" * 80)
@@ -111,29 +186,24 @@ class CausalGraphRefiner:
     
     def load_data(self):
         """
-        步骤1: 加载PCMCI结果和特征映射
+        步骤1: 加载PCMCI结果
         """
         print("\n" + "=" * 80)
         print("步骤1: 加载数据")
         print("=" * 80)
-        
+
         # 加载PCMCI结果
         self.df_results = pd.read_csv(self.results_path)
+        self.df_results = normalize_pcmci_results_columns(self.df_results)
         print(f"\n✅ PCMCI结果已加载:")
         print(f"   总关系数: {len(self.df_results)}")
         print(f"   显著关系数: {self.df_results['Causal'].sum()}")
-        
-        # 加载特征映射
-        self.df_mapping = pd.read_csv(self.mapping_path, index_col=0)
-        print(f"\n✅ 特征映射已加载:")
-        for var, desc in self.df_mapping['特征说明'].items():
-            print(f"   {var}: {desc}")
-        
+
         # 只保留因果关系
         self.causal_links = self.df_results[self.df_results['Causal'] == True].copy()
         print(f"\n📊 过滤后:")
         print(f"   保留 {len(self.causal_links)} 个显著因果关系")
-        
+
         return self.causal_links
     
     def analyze_relationship_strength(self, correlation_threshold=0.3):
@@ -248,30 +318,24 @@ class CausalGraphRefiner:
         top_links = self.strong_links.nlargest(top_n, 'strength')
         
         print(f"\n🔥 Top {top_n} 最强因果关系:\n")
-        
+
         for idx, (i, row) in enumerate(top_links.iterrows(), 1):
             from_var = row['From']
             to_var = row['To']
             lag = row['Lag']
             corr = row['Correlation']
             pval = row['P_value']
-            
-            # 获取变量含义
-            from_desc = self.df_mapping.loc[from_var, '特征说明']
-            to_desc = self.df_mapping.loc[to_var, '特征说明']
-            
+
             if lag == 0:
                 arrow = "<-->"
                 lag_desc = "同时"
             else:
                 arrow = f"--[Lag{lag}]-->"
                 lag_desc = f"{lag*12}小时后"
-            
+
             print(f"{idx}. {from_var} {arrow} {to_var}")
-            print(f"   {from_desc}")
-            print(f"   {to_desc}")
             print(f"   相关性: {corr:.3f} | p值: {pval:.6f}")
-            print(f"   传播解释: {from_desc.split('(')[0]} → {lag_desc} → {to_desc.split('(')[0]}")
+            print(f"   传播时间: {lag_desc}")
             print()
         
         # 保存关键路径
@@ -317,8 +381,7 @@ class CausalGraphRefiner:
         print(f"\n🎯 节点重要性排名 (度中心性):")
         sorted_nodes = sorted(degree_centrality.items(), key=lambda x: x[1], reverse=True)
         for node, centrality in sorted_nodes:
-            desc = self.df_mapping.loc[node, '特征说明'].split('(')[0]
-            print(f"   {node} ({desc}): {centrality:.3f}")
+            print(f"   {node}: {centrality:.3f}")
         
         return self.G
     
@@ -548,12 +611,9 @@ class CausalGraphRefiner:
             linewidths=3
         )
         
-        # 标签(带变量说明)
-        labels = {}
-        for node in G_core.nodes():
-            desc = self.df_mapping.loc[node, '特征说明'].split('(')[0].strip()
-            labels[node] = f"{node}\n{desc}"
-        
+        # 标签
+        labels = {node: node for node in G_core.nodes()}
+
         nx.draw_networkx_labels(
             G_core, pos,
             labels,
@@ -610,27 +670,22 @@ class CausalGraphRefiner:
             report += f"- **传播意义**: {analysis['meaning']}\n\n"
         
         report += "---\n\n## 4. 关键传播路径\n\n"
-        
+
         # Top路径
         top_links = self.strong_links.nlargest(10, 'strength')
         for idx, (_, row) in enumerate(top_links.iterrows(), 1):
-            from_desc = self.df_mapping.loc[row['From'], '特征说明']
-            to_desc = self.df_mapping.loc[row['To'], '特征说明']
-            
             report += f"**{idx}. {row['From']} → {row['To']} (Lag {row['Lag']})**\n\n"
             report += f"- 相关性: {row['Correlation']:.3f}\n"
-            report += f"- p值: {row['P_value']:.6f}\n"
-            report += f"- 传播路径: {from_desc} → {to_desc}\n\n"
+            report += f"- p值: {row['P_value']:.6f}\n\n"
         
         report += "---\n\n## 5. 节点重要性\n\n"
-        
+
         # 节点中心性
         degree_centrality = nx.degree_centrality(self.G)
         sorted_nodes = sorted(degree_centrality.items(), key=lambda x: x[1], reverse=True)
-        
+
         for node, centrality in sorted_nodes:
-            desc = self.df_mapping.loc[node, '特征说明']
-            report += f"- **{node}** ({desc}): {centrality:.3f}\n"
+            report += f"- **{node}**: {centrality:.3f}\n"
         
         report += "\n---\n\n## 6. 研究发现总结\n\n"
         
@@ -690,7 +745,7 @@ class CausalGraphRefiner:
         for node in self.G.nodes():
             nodes_data.append({
                 'Node': node,
-                'Label': self.df_mapping.loc[node, '特征说明'],
+                'Label': node,
                 'Degree': self.G.degree(node),
                 'Centrality': degree_centrality[node]
             })
@@ -707,64 +762,67 @@ def main():
     """
     主处理流程
     """
+    args = parse_args()
+
     # 初始化日志
     global logger
-    output_dir = Path("causal_graph_analysis")
-    output_dir.mkdir(exist_ok=True)
-    temp_log_path = Path("temp_causal_graph_log.md")
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    temp_log_path = output_dir / "temp_causal_graph_log.md"
     logger = Logger(temp_log_path)
     sys.stdout = logger
 
     try:
-        # ========== 配置参数 ==========
-        # 📌 修改为你的实际文件路径
-        #pcmci_results = "douyin_optimized/n100000/douyin_pcmci_12H_optimized.csv"  # PCMCI结果
-        #feature_mapping = "douyin_optimized/n100000/feature_mapping.csv"          # 特征映射
-        
-        # 如果文件路径不同,可以这样设置:
-        pcmci_results = "run_data/n1000/pcmci_significant_links.csv"
-        feature_mapping = "douyin_optimized/n100000/feature_mapping.csv"
-        
+        pcmci_results = resolve_pcmci_results_path(
+            pcmci_results=args.pcmci_results,
+            run_dir=args.run_dir,
+        )
+        if pcmci_results is None:
+            raise FileNotFoundError("未找到可用的 pcmci_results.csv，请使用 --pcmci-results 或 --run-dir 指定输入")
+
+        pcmci_results = Path(pcmci_results)
+        if not pcmci_results.exists():
+            raise FileNotFoundError(f"PCMCI结果文件不存在: {pcmci_results}")
+
         # ========== 初始化精炼器 ==========
         refiner = CausalGraphRefiner(
             pcmci_results_path=pcmci_results,
-            feature_mapping_path=feature_mapping,
-            output_dir="causal_graph_analysis"
+            output_dir=output_dir
         )
-        
+
         # 更新日志路径
         final_log_path = refiner.output_dir / "refinement_log.md"
         logger.log_path = final_log_path
-        
+
         # ========== 执行分析流程 ==========
-        
+
         # 步骤1: 加载数据
         causal_links = refiner.load_data()
-        
+
         # 步骤2: 分析关系强度
-        strong_links = refiner.analyze_relationship_strength(correlation_threshold=0.3)
-        
+        strong_links = refiner.analyze_relationship_strength(correlation_threshold=args.correlation_threshold)
+
         # 步骤3: 按滞后时间分层
         lag_analysis = refiner.analyze_by_lag()
-        
+
         # 步骤4: 识别关键路径
-        key_pathways = refiner.identify_key_pathways(top_n=10)
-        
+        key_pathways = refiner.identify_key_pathways(top_n=args.top_n)
+
         # 步骤5: 构建网络图
         G = refiner.build_network_graph()
-        
+
         # 步骤6: 可视化
         print("\n" + "=" * 80)
         print("步骤6: 生成可视化图表")
         print("=" * 80)
-        
+
         refiner.visualize_full_network()
         refiner.visualize_by_lag()
-        refiner.visualize_key_pathways(top_n=15)
-        
+        refiner.visualize_key_pathways(top_n=args.core_top_n)
+
         # 步骤7: 生成报告
         report = refiner.generate_summary_report()
-        
+
         # 步骤8: 导出数据
         edges_df, nodes_df = refiner.export_network_data()
         

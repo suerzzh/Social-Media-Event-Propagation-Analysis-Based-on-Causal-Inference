@@ -52,73 +52,63 @@
 
 - 相关性: 0.990
 - p值: 0.000000
-- 传播路径: total_comments (视频总评论数) → total_likes (视频总点赞数)
 
 **2. X2 → X3 (Lag 0)**
 
 - 相关性: 0.990
 - p值: 0.000000
-- 传播路径: total_likes (视频总点赞数) → total_comments (视频总评论数)
 
 **3. X5 → X4 (Lag 0)**
 
 - 相关性: 0.954
 - p值: 0.000000
-- 传播路径: total_collects (视频总收藏数) → total_shares (视频总转发数)
 
 **4. X4 → X5 (Lag 0)**
 
 - 相关性: 0.954
 - p值: 0.000000
-- 传播路径: total_shares (视频总转发数) → total_collects (视频总收藏数)
 
 **5. X4 → X2 (Lag 0)**
 
 - 相关性: 0.886
 - p值: 0.000000
-- 传播路径: total_shares (视频总转发数) → total_likes (视频总点赞数)
 
 **6. X2 → X4 (Lag 0)**
 
 - 相关性: 0.886
 - p值: 0.000000
-- 传播路径: total_likes (视频总点赞数) → total_shares (视频总转发数)
 
 **7. X4 → X3 (Lag 0)**
 
 - 相关性: 0.872
 - p值: 0.000000
-- 传播路径: total_shares (视频总转发数) → total_comments (视频总评论数)
 
 **8. X3 → X4 (Lag 0)**
 
 - 相关性: 0.872
 - p值: 0.000000
-- 传播路径: total_comments (视频总评论数) → total_shares (视频总转发数)
 
 **9. X5 → X3 (Lag 0)**
 
 - 相关性: 0.774
 - p值: 0.000000
-- 传播路径: total_collects (视频总收藏数) → total_comments (视频总评论数)
 
 **10. X3 → X5 (Lag 0)**
 
 - 相关性: 0.774
 - p值: 0.000000
-- 传播路径: total_comments (视频总评论数) → total_collects (视频总收藏数)
 
 ---
 
 ## 5. 节点重要性
 
-- **X4** (total_shares (视频总转发数)): 2.167
-- **X5** (total_collects (视频总收藏数)): 2.167
-- **X6** (comment_count (评论发布数量)): 2.167
-- **X2** (total_likes (视频总点赞数)): 2.000
-- **X1** (video_count (视频发布数量)): 2.000
-- **X7** (avg_comment_likes (评论平均点赞数)): 2.000
-- **X3** (total_comments (视频总评论数)): 1.833
+- **X4**: 2.167
+- **X5**: 2.167
+- **X6**: 2.167
+- **X2**: 2.000
+- **X1**: 2.000
+- **X7**: 2.000
+- **X3**: 1.833
 
 ---
 

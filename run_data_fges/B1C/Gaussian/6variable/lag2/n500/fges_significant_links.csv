@@ -1,0 +1,5 @@
+﻿From,To,Lag,P_value,Value,Causal,Type,Edge_Type
+X5,X6,0,,1.0,True,Simultaneous,Undirected
+X6,X5,0,,1.0,True,Simultaneous,Undirected
+X4,X2,1,,1.0,True,Lag1,Lagged
+X1,X3,2,,1.0,True,Lag2,Lagged

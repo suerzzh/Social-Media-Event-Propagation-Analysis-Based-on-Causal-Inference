@@ -1,0 +1,2 @@
+﻿From,To,Lag,P_value,Value,Causal,Type,Edge_Type
+X6,X6,2,,1.0,True,Lag2,Lagged

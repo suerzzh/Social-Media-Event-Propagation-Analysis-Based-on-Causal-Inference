@@ -1,0 +1,7 @@
+﻿input,output,variables,significant_links,elapsed_seconds
+C:\Users\86187\Desktop\毕设\新版\B1C\lag 2\500\nonlinear_confounded_n500_vars6_lag2_gaussian.csv,C:\Users\86187\Desktop\毕设\新版\run_data_kernel_granger\B1C\Gaussian\6variable\lag2\n500,"X1,X2,X3,X4,X5,X6",4,14.660621
+C:\Users\86187\Desktop\毕设\新版\B1C\lag 2\1000\nonlinear_confounded_n1000_vars6_lag2_gaussian.csv,C:\Users\86187\Desktop\毕设\新版\run_data_kernel_granger\B1C\Gaussian\6variable\lag2\n1000,"X1,X2,X3,X4,X5,X6",1,15.856564
+C:\Users\86187\Desktop\毕设\新版\B1C\lag 2\3000\nonlinear_confounded_n3000_vars6_lag2_gaussian.csv,C:\Users\86187\Desktop\毕设\新版\run_data_kernel_granger\B1C\Gaussian\6variable\lag2\n3000,"X1,X2,X3,X4,X5,X6",1,20.056865
+C:\Users\86187\Desktop\毕设\新版\B1C\lag 3\500\nonlinear_confounded_n500_vars6_lag3_gaussian.csv,C:\Users\86187\Desktop\毕设\新版\run_data_kernel_granger\B1C\Gaussian\6variable\lag3\n500,"X1,X2,X3,X4,X5,X6",4,37.097057
+C:\Users\86187\Desktop\毕设\新版\B1C\lag 3\1000\nonlinear_confounded_n1000_vars6_lag3_gaussian.csv,C:\Users\86187\Desktop\毕设\新版\run_data_kernel_granger\B1C\Gaussian\6variable\lag3\n1000,"X1,X2,X3,X4,X5,X6",5,34.968891
+C:\Users\86187\Desktop\毕设\新版\B1C\lag 3\3000\nonlinear_confounded_n3000_vars6_lag3_gaussian.csv,C:\Users\86187\Desktop\毕设\新版\run_data_kernel_granger\B1C\Gaussian\6variable\lag3\n3000,"X1,X2,X3,X4,X5,X6",5,38.123478

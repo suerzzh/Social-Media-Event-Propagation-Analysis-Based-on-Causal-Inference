@@ -1,0 +1,9 @@
+﻿From,To,Lag,P_value,Value,Causal,Type,Edge_Type,Graph
+X1,X1,0,0.0,0.0,True,Simultaneous,Simultaneous,
+X2,X2,0,0.0,0.0,True,Simultaneous,Simultaneous,
+X3,X3,0,0.0,0.0,True,Simultaneous,Simultaneous,
+X4,X4,0,0.0,0.0,True,Simultaneous,Simultaneous,
+X5,X5,0,0.0,0.0,True,Simultaneous,Simultaneous,
+X6,X6,0,0.0,0.0,True,Simultaneous,Simultaneous,
+X5,X4,1,0.013972055888223553,0.050215337673789495,True,Lag1,Lagged,<->
+X6,X5,2,0.01996007984031936,0.040761040535485904,True,Lag2,Lagged,o->
